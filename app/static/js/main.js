@@ -158,3 +158,40 @@ document.querySelectorAll(".detalles-btn").forEach((btn) => {
     );
   });
 });
+
+// --- BOTONES RESERVAR Y DETALLES ---
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Botones de reservar en las tarjetas
+  document.querySelectorAll(".card button.btn-primary").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const aulaName = e.target.closest(".card").querySelector("h3").innerText;
+      const selectAula = document.querySelector("#reserva-aula");
+
+      // Buscar la opción del aula y seleccionarla
+      const option = Array.from(selectAula.options).find(
+        (opt) => opt.text === aulaName
+      );
+      if (option) {
+        selectAula.value = option.value;
+      }
+
+      // Hacer scroll suave al formulario
+      document.querySelector("#reserva-form").scrollIntoView({
+        behavior: "smooth",
+      });
+    });
+  });
+
+  // Botones de detalles (simples alertas por ahora)
+  document.querySelectorAll(".card button.btn-ghost").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const aulaName = e.target.closest(".card").querySelector("h3").innerText;
+      const details = {
+        A101: "Aula A101: Capacidad 30 alumnos. Piso 1. Proyector y pizarrón.",
+        B202: "Aula B202: Capacidad 20 alumnos. Piso 2. Ideal para clases pequeñas.",
+      };
+      alert(details[aulaName] || "Sin detalles disponibles.");
+    });
+  });
+});
