@@ -54,8 +54,10 @@
       <h3>Aula A101</h3>
       <p class="muted">Capacidad: 30 · Piso 1</p>
       <div style="margin-top: 10px">
-        <button class="btn-primary" id="btn-reservar">Reservar</button>
-        <button class="btn-ghost">Detalles</button>
+        <button class="btn-primary" id="btn-reservar" data-aula="1">
+          Reservar
+        </button>
+        <button class="btn-ghost" data-aula="1">Detalles</button>
       </div>
     </article>
 
@@ -63,8 +65,8 @@
       <h3>Aula B202</h3>
       <p class="muted">Capacidad: 20 · Piso 2</p>
       <div style="margin-top: 10px">
-        <button class="btn-primary">Reservar</button>
-        <button class="btn-ghost">Detalles</button>
+        <button class="btn-primary" data-aula="2">Reservar</button>
+        <button class="btn-ghost" data-aula="2">Detalles</button>
       </div>
     </article>
   </div>
@@ -95,8 +97,10 @@
         <th>Inicio</th>
         <th>Fin</th>
         <th>Estado</th>
+        <th>Acciones</th>
       </tr>
     </thead>
+
     <tbody></tbody>
   </table>
 </div>

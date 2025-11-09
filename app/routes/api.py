@@ -69,6 +69,9 @@ def create_reserva():
         Reserva.inicio < fin,
         inicio < Reserva.fin
     ).first()
+    # No permitir reservas entre medianoche y 6 AM
+    if inicio.hour < 6 or fin.hour < 6:
+    return jsonify({"error": "No se permiten reservas entre las 00:00 y las 06:00"}), 400
 
     if conflict:
         return (
@@ -126,4 +129,11 @@ def actualizar_reserva(id):
     r.estado = nueva
     db.session.commit()
     return jsonify({"ok": True, "estado": r.estado})
+@bp.route("/reservas/<int:id>", methods=["DELETE"])
+def eliminar_reserva(id):
+    """Elimina una reserva por su ID."""
+    reserva = Reserva.query.get_or_404(id)
+    db.session.delete(reserva)
+    db.session.commit()
+    return jsonify({"ok": True, "message": f"Reserva {id} eliminada"})
 

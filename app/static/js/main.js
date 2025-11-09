@@ -16,6 +16,15 @@
   }
 });
 
+document.querySelectorAll(".reservar-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const aulaId = btn.dataset.aula;
+    document.getElementById("reserva-aula").value = aulaId;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.getElementById("reserva-inicio").focus();
+  });
+});
+
 // reserva form handler (añadir a main.js)
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("reserva-form");
@@ -30,6 +39,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const usuario_id = document.getElementById("reserva-user").value;
     const inicio = document.getElementById("reserva-inicio").value;
     const fin = document.getElementById("reserva-fin").value;
+    const startHour = new Date(inicio).getHours();
+    const endHour = new Date(fin).getHours();
+    if (startHour < 6 || endHour < 6) {
+      msg.style.color = "#a00";
+      msg.textContent =
+        "No se pueden reservar aulas entre las 00:00 y las 06:00.";
+      return;
+    }
 
     try {
       const res = await fetch("/api/reservas", {
@@ -102,4 +119,42 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(cargarReservas, 1000);
     });
   }
+});
+for (const r of data) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${r.id}</td>
+    <td>${r.aula || "-"}</td>
+    <td>${r.usuario || "-"}</td>
+    <td>${r.inicio}</td>
+    <td>${r.fin}</td>
+    <td>${r.estado}</td>
+    <td><button class="btn-ghost borrar" data-id="${r.id}">🗑️</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// luego de generar las filas, añadí:
+tbody.querySelectorAll(".borrar").forEach((btn) => {
+  btn.addEventListener("click", async (ev) => {
+    const id = ev.target.dataset.id;
+    if (!confirm(`¿Eliminar reserva ${id}?`)) return;
+    const res = await fetch(`/api/reservas/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      cargarReservas();
+    } else {
+      alert("Error al eliminar");
+    }
+  });
+});
+
+document.querySelectorAll(".detalles-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const aulaId = btn.dataset.aula;
+    const res = await fetch("/aulas");
+    const data = await res.text();
+    alert(
+      `Detalles de aula ${aulaId}: aún no implementado en UI\n\n(Próximamente puedes mostrar aquí las reservas activas de esa aula)`
+    );
+  });
 });
