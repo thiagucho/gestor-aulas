@@ -22,7 +22,8 @@ def create_app(config_object="config.Config"):
     from .routes.main import bp as main_bp
     app.register_blueprint(main_bp)
 
-    from .routes.api import bp as api_bp
+    from .routes.api_respaldo import bp as api_bp
+
     app.register_blueprint(api_bp)
     
     from .routes.auth import bp as auth_bp
