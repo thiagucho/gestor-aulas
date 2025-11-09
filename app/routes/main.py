@@ -1,20 +1,13 @@
-﻿# app/routes/main.py  (sustituir/añadir)
-from flask import Blueprint, render_template, jsonify
+﻿# app/routes/main.py
+from flask import Blueprint, render_template, jsonify, session, redirect, url_for, request
 from app.models import Aula, Reserva
-from flask import session, redirect, url_for, render_template, request
-from app import app, db
-
-def solo_admin():
-    return session.get("user_role") == "admin"
-
-@app.route("/panel")
-def panel_admin():
-    if not solo_admin():
-        return redirect(url_for("auth.login"))
-    return render_template("panel.html")
-
+from app import db
 
 bp = Blueprint("main", __name__)
+
+# Función auxiliar
+def solo_admin():
+    return session.get("user_role") == "admin"
 
 @bp.route("/")
 def index():
@@ -30,19 +23,12 @@ def aulas():
     data = [{"id": a.id, "nombre": a.nombre, "capacidad": a.capacidad, "ubicacion": a.ubicacion} for a in list_aulas]
     return jsonify(data)
 
-
-bp = Blueprint("main", __name__)
-
-# Función de seguridad
-def solo_admin():
-    return session.get("user_role") == "admin"
+# ===================== ADMIN PANEL =====================
 
 @bp.route("/panel-admin")
 def panel_admin():
-    # si no es admin, lo echamos al login
     if not solo_admin():
         return redirect(url_for("auth.login"))
-    
     reservas = Reserva.query.order_by(Reserva.id.desc()).all()
     aulas = Aula.query.all()
     return render_template("panel-admin.html", reservas=reservas, aulas=aulas)
@@ -84,4 +70,3 @@ def borrar_aula(id):
     db.session.delete(aula)
     db.session.commit()
     return redirect(url_for("main.panel_admin"))
-
