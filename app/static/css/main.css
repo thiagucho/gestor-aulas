@@ -1,0 +1,24 @@
+﻿:root{
+  --primary:#2b6cb0;
+  --bg:#f6f8fb;
+  --text:#111827;
+  --muted:#6b7280;
+  --radius:10px;
+  --shadow: 0 2px 6px rgba(16,24,40,0.06);
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Roboto,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);line-height:1.4}
+.container{max-width:1000px;margin:20px auto;padding:0 16px}
+.appbar{background:var(--primary);color:white;padding:12px 0}
+.header-inner{display:flex;align-items:center;gap:12px}
+.app-icon{font-size:28px}
+.app-title{margin:0;font-size:1.05rem}
+.app-sub{margin:0;font-size:0.85rem;opacity:0.95}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:12px}
+.card{background:white;border-radius:var(--radius);padding:12px;box-shadow:var(--shadow)}
+.muted{color:var(--muted);font-size:0.95rem}
+.btn-primary{background:var(--primary);color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+.btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:7px 10px;border-radius:8px;cursor:pointer}
+.site-footer{margin-top:30px;text-align:center;color:var(--muted);padding:12px 0}
