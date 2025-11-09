@@ -1,197 +1,235 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
-  const btnPing = document.getElementById("btn-ping");
-  const pingResult = document.getElementById("ping-result");
+﻿// app/static/js/main.js
+// Consolidated script: ping, reserva form, cargar reservas, botones Reservar/Detalles, borrar reserva.
 
-  if (btnPing) {
-    btnPing.addEventListener("click", async () => {
-      pingResult.textContent = "probando...";
-      try {
-        const r = await fetch("/ping");
-        const j = await r.json();
-        pingResult.textContent = j.status + " · " + (j.who || "");
-      } catch (e) {
-        pingResult.textContent = "error: " + e.message;
-      }
-    });
+async function fetchJson(url, opts = {}) {
+  const res = await fetch(url, opts);
+  const text = await res.text();
+  try {
+    return { ok: res.ok, status: res.status, json: JSON.parse(text) };
+  } catch (e) {
+    return { ok: res.ok, status: res.status, text };
   }
-});
+}
 
-document.querySelectorAll(".reservar-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const aulaId = btn.dataset.aula;
-    document.getElementById("reserva-aula").value = aulaId;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    document.getElementById("reserva-inicio").focus();
-  });
-});
-
-// reserva form handler (añadir a main.js)
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("reserva-form");
-  const msg = document.getElementById("reserva-msg");
-  if (!form) return;
-
-  form.addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    msg.textContent = "Creando reserva...";
-
-    const aula_id = document.getElementById("reserva-aula").value;
-    const usuario_id = document.getElementById("reserva-user").value;
-    const inicio = document.getElementById("reserva-inicio").value;
-    const fin = document.getElementById("reserva-fin").value;
-    const startHour = new Date(inicio).getHours();
-    const endHour = new Date(fin).getHours();
-    if (startHour < 6 || endHour < 6) {
-      msg.style.color = "#a00";
-      msg.textContent =
-        "No se pueden reservar aulas entre las 00:00 y las 06:00.";
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/reservas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aula_id, usuario_id, inicio, fin }),
-      });
-
-      const data = await res.json();
-      if (res.status === 201) {
-        msg.style.color = "green";
-        msg.textContent = `Reserva creada (id ${data.id}).`;
-        form.reset();
-        // opcional: actualizar lista UI llamando a /aulas o a /reservas
-      } else if (res.status === 409) {
-        msg.style.color = "#a00";
-        msg.textContent = `Conflicto: ${data.message || data.error}`;
-      } else {
-        msg.style.color = "#a00";
-        msg.textContent = data.error || JSON.stringify(data);
-      }
-    } catch (err) {
-      msg.style.color = "#a00";
-      msg.textContent = "Error de red: " + err.message;
-    }
-  });
-
-  document.getElementById("reserva-clear").addEventListener("click", () => {
-    form.reset();
-    msg.textContent = "";
-  });
-});
 async function cargarReservas() {
   const tbody = document.querySelector("#tabla-reservas tbody");
   if (!tbody) return;
-  tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='7'>Cargando...</td></tr>";
 
   try {
-    const res = await fetch("/api/reservas");
-    const data = await res.json();
+    const r = await fetch("/api/reservas");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
     tbody.innerHTML = "";
     if (!data.length) {
-      tbody.innerHTML = "<tr><td colspan='6'>Sin reservas aún</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='7'>Sin reservas aún</td></tr>";
       return;
     }
 
-    for (const r of data) {
+    for (const item of data) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${r.id}</td>
-        <td>${r.aula || "-"}</td>
-        <td>${r.usuario || "-"}</td>
-        <td>${r.inicio}</td>
-        <td>${r.fin}</td>
-        <td>${r.estado}</td>
+        <td>${item.id}</td>
+        <td>${item.aula || "-"}</td>
+        <td>${item.usuario || "-"}</td>
+        <td>${item.inicio}</td>
+        <td>${item.fin}</td>
+        <td>${item.estado}</td>
+        <td>
+          <button class="btn-ghost borrar" data-id="${
+            item.id
+          }" title="Eliminar reserva ${item.id}">🗑️</button>
+        </td>
       `;
       tbody.appendChild(tr);
     }
-  } catch (err) {
-    tbody.innerHTML = `<tr><td colspan='6'>Error: ${err.message}</td></tr>`;
-  }
-}
 
-// refrescar automáticamente después de crear reserva
-document.addEventListener("DOMContentLoaded", () => {
-  cargarReservas();
-  const form = document.getElementById("reserva-form");
-  if (form) {
-    form.addEventListener("submit", () => {
-      setTimeout(cargarReservas, 1000);
-    });
-  }
-});
-for (const r of data) {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td>${r.id}</td>
-    <td>${r.aula || "-"}</td>
-    <td>${r.usuario || "-"}</td>
-    <td>${r.inicio}</td>
-    <td>${r.fin}</td>
-    <td>${r.estado}</td>
-    <td><button class="btn-ghost borrar" data-id="${r.id}">🗑️</button></td>
-  `;
-  tbody.appendChild(tr);
-}
-
-// luego de generar las filas, añadí:
-tbody.querySelectorAll(".borrar").forEach((btn) => {
-  btn.addEventListener("click", async (ev) => {
-    const id = ev.target.dataset.id;
-    if (!confirm(`¿Eliminar reserva ${id}?`)) return;
-    const res = await fetch(`/api/reservas/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      cargarReservas();
-    } else {
-      alert("Error al eliminar");
-    }
-  });
-});
-
-document.querySelectorAll(".detalles-btn").forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    const aulaId = btn.dataset.aula;
-    const res = await fetch("/aulas");
-    const data = await res.text();
-    alert(
-      `Detalles de aula ${aulaId}: aún no implementado en UI\n\n(Próximamente puedes mostrar aquí las reservas activas de esa aula)`
-    );
-  });
-});
-
-// --- BOTONES RESERVAR Y DETALLES ---
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Botones de reservar en las tarjetas
-  document.querySelectorAll(".card button.btn-primary").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const aulaName = e.target.closest(".card").querySelector("h3").innerText;
-      const selectAula = document.querySelector("#reserva-aula");
-
-      // Buscar la opción del aula y seleccionarla
-      const option = Array.from(selectAula.options).find(
-        (opt) => opt.text === aulaName
-      );
-      if (option) {
-        selectAula.value = option.value;
-      }
-
-      // Hacer scroll suave al formulario
-      document.querySelector("#reserva-form").scrollIntoView({
-        behavior: "smooth",
+    // attach delete handlers (after rows exist)
+    tbody.querySelectorAll(".borrar").forEach((btn) => {
+      btn.addEventListener("click", async (ev) => {
+        const id = ev.currentTarget.dataset.id;
+        if (!confirm(`¿Eliminar reserva ${id}?`)) return;
+        try {
+          const res = await fetch(`/api/reservas/${id}`, { method: "DELETE" });
+          if (res.ok) {
+            cargarReservas();
+          } else {
+            const txt = await res.text();
+            alert("Error al eliminar: " + (txt || res.status));
+          }
+        } catch (err) {
+          alert("Error de red al eliminar: " + err.message);
+        }
       });
     });
-  });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan='7'>Error cargando reservas: ${err.message}</td></tr>`;
+  }
+}
 
-  // Botones de detalles (simples alertas por ahora)
-  document.querySelectorAll(".card button.btn-ghost").forEach((btn) => {
+document.addEventListener("DOMContentLoaded", () => {
+  // --- Ping backend ---
+  const btnPing = document.getElementById("btn-ping");
+  const pingResult = document.getElementById("ping-result");
+  if (btnPing) {
+    btnPing.addEventListener("click", async () => {
+      if (pingResult) pingResult.textContent = "probando...";
+      try {
+        const r = await fetch("/ping");
+        const j = await r.json();
+        if (pingResult)
+          pingResult.textContent = (j.status || "ok") + " · " + (j.who || "");
+      } catch (e) {
+        if (pingResult) pingResult.textContent = "error: " + e.message;
+      }
+    });
+  }
+
+  // --- Form handler ---
+  const form = document.getElementById("reserva-form");
+  const msg = document.getElementById("reserva-msg");
+  if (form) {
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      if (msg) {
+        msg.style.color = "";
+        msg.textContent = "Creando reserva...";
+      }
+
+      const aula_id = document.getElementById("reserva-aula").value;
+      const usuario_id = document.getElementById("reserva-user").value;
+      const inicio = document.getElementById("reserva-inicio").value;
+      const fin = document.getElementById("reserva-fin").value;
+
+      // Validación sencilla de fechas
+      if (!inicio || !fin) {
+        if (msg) {
+          msg.style.color = "#a00";
+          msg.textContent = "Inicio y fin son obligatorios.";
+        }
+        return;
+      }
+
+      const startHour = new Date(inicio).getHours();
+      const endHour = new Date(fin).getHours();
+      if (startHour < 6 || endHour < 6) {
+        if (msg) {
+          msg.style.color = "#a00";
+          msg.textContent =
+            "No se pueden reservar aulas entre las 00:00 y las 06:00.";
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/reservas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ aula_id, usuario_id, inicio, fin }),
+        });
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data = { raw: text };
+        }
+
+        if (res.status === 201) {
+          if (msg) {
+            msg.style.color = "green";
+            msg.textContent = `Reserva creada (id ${data.id}).`;
+          }
+          form.reset();
+          setTimeout(cargarReservas, 700);
+        } else if (res.status === 409) {
+          if (msg) {
+            msg.style.color = "#a00";
+            msg.textContent = `Conflicto: ${
+              data.message || data.error || text
+            }`;
+          }
+        } else {
+          if (msg) {
+            msg.style.color = "#a00";
+            msg.textContent = data.error || JSON.stringify(data) || text;
+          }
+        }
+      } catch (err) {
+        if (msg) {
+          msg.style.color = "#a00";
+          msg.textContent = "Error de red: " + err.message;
+        }
+      }
+    });
+
+    const clearBtn = document.getElementById("reserva-clear");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        form.reset();
+        if (msg) msg.textContent = "";
+      });
+    }
+  }
+
+  // --- Botones Reservar / Detalles en las cards ---
+  // reservar-btn: any button with attribute data-aula
+  document.querySelectorAll("button[data-aula]").forEach((btn) => {
+    // reservar behavior on btn-primary, detalles on btn-ghost
     btn.addEventListener("click", (e) => {
-      const aulaName = e.target.closest(".card").querySelector("h3").innerText;
-      const details = {
-        A101: "Aula A101: Capacidad 30 alumnos. Piso 1. Proyector y pizarrón.",
-        B202: "Aula B202: Capacidad 20 alumnos. Piso 2. Ideal para clases pequeñas.",
-      };
-      alert(details[aulaName] || "Sin detalles disponibles.");
+      const aulaId = btn.getAttribute("data-aula");
+      const isReservar = btn.classList.contains("btn-primary");
+      const isDetalles = btn.classList.contains("btn-ghost");
+
+      if (isReservar) {
+        const select = document.getElementById("reserva-aula");
+        if (select) select.value = aulaId;
+        const formEl = document.getElementById("reserva-form");
+        if (formEl) formEl.scrollIntoView({ behavior: "smooth" });
+        const inicioInput = document.getElementById("reserva-inicio");
+        if (inicioInput) inicioInput.focus();
+        return;
+      }
+
+      if (isDetalles) {
+        // fetch /aulas could be used, but for now show a simple modal/alert
+        const card = btn.closest(".card");
+        const aulaName = card
+          ? card.querySelector("h3")
+            ? card.querySelector("h3").innerText
+            : "Aula " + aulaId
+          : "Aula " + aulaId;
+        // try to display simple details by calling backend /aulas and matching id
+        (async () => {
+          try {
+            const r = await fetch("/aulas");
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            const text = await r.text();
+            // if /aulas returns JSON replace the alert with better UI; fallback to simple alert
+            try {
+              const json = JSON.parse(text);
+              const found = json.find((a) => String(a.id) === String(aulaId));
+              if (found) {
+                alert(
+                  `${found.nombre}\nCapacidad: ${found.capacidad}\nUbicación: ${
+                    found.ubicacion || "-"
+                  }`
+                );
+                return;
+              }
+            } catch (e) {
+              /* ignore JSON parse error */
+            }
+            alert("Detalles de " + aulaName + "\n(Información no disponible)");
+          } catch (err) {
+            alert("No se pudieron cargar detalles: " + err.message);
+          }
+        })();
+        return;
+      }
     });
   });
+
+  // Inicializar la tabla de reservas al cargar la página
+  cargarReservas();
 });
