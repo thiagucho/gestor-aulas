@@ -54,6 +54,10 @@
       }
     </style>
   </head>
+  {% if session.get("user_role") == "admin" %}
+  <a href="{{ url_for('main.panel_admin') }}">Panel Admin</a>
+  {% endif %}
+
   <body>
     <header class="appbar">
       <div class="container header-inner">
@@ -63,6 +67,14 @@
           <p class="app-sub">Reservas · Agenda · Admin</p>
         </div>
       </div>
+      {% if session.get("user_id") %}
+      <div style="float: right">
+        <span>{{ session.get("user_role")|capitalize }}</span> ·
+        <a href="{{ url_for('auth.logout') }}">Salir</a>
+      </div>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+      {% endif %}
     </header>
 
     <main class="container">{% block content %}{% endblock %}</main>

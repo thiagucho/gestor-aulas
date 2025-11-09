@@ -1,0 +1,84 @@
+{% extends "base.html" %} {% block title %}Panel de Administración{% endblock %}
+{% block content %}
+<h2>Panel de Administración</h2>
+<p>Bienvenido, {{ session.get("user_role")|capitalize }}.</p>
+
+<!-- Tabla de reservas -->
+<div class="card">
+  <h3>Reservas pendientes</h3>
+  <table style="width: 100%; border-collapse: collapse">
+    <thead>
+      <tr style="background: #eee">
+        <th>ID</th>
+        <th>Aula</th>
+        <th>Usuario</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reservas %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.aula }}</td>
+        <td>{{ r.usuario }}</td>
+        <td>{{ r.inicio }}</td>
+        <td>{{ r.fin }}</td>
+        <td>{{ r.estado }}</td>
+        <td>
+          {% if r.estado == 'pendiente' %}
+          <form
+            action="{{ url_for('main.aprobar_reserva', id=r.id) }}"
+            method="POST"
+            style="display: inline"
+          >
+            <button class="btn-primary">Aprobar</button>
+          </form>
+          <form
+            action="{{ url_for('main.rechazar_reserva', id=r.id) }}"
+            method="POST"
+            style="display: inline"
+          >
+            <button class="btn-ghost">Rechazar</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Crear aula -->
+<div class="card" style="margin-top: 20px">
+  <h3>Crear nueva aula</h3>
+  <form
+    action="{{ url_for('main.crear_aula') }}"
+    method="POST"
+    style="display: flex; gap: 10px"
+  >
+    <input type="text" name="nombre" placeholder="Nombre del aula" required />
+    <input type="number" name="capacidad" placeholder="Capacidad" required />
+    <button class="btn-primary">Agregar</button>
+  </form>
+
+  <h4 style="margin-top: 16px">Aulas existentes:</h4>
+  <ul>
+    {% for a in aulas %}
+    <li>
+      {{ a.nombre }} (Cap: {{ a.capacidad }})
+      <form
+        action="{{ url_for('main.borrar_aula', id=a.id) }}"
+        method="POST"
+        style="display: inline"
+      >
+        <button class="btn-ghost">🗑️</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}
