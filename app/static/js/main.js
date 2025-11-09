@@ -62,3 +62,44 @@ document.addEventListener("DOMContentLoaded", function () {
     msg.textContent = "";
   });
 });
+async function cargarReservas() {
+  const tbody = document.querySelector("#tabla-reservas tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
+
+  try {
+    const res = await fetch("/api/reservas");
+    const data = await res.json();
+    tbody.innerHTML = "";
+    if (!data.length) {
+      tbody.innerHTML = "<tr><td colspan='6'>Sin reservas aún</td></tr>";
+      return;
+    }
+
+    for (const r of data) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.aula || "-"}</td>
+        <td>${r.usuario || "-"}</td>
+        <td>${r.inicio}</td>
+        <td>${r.fin}</td>
+        <td>${r.estado}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan='6'>Error: ${err.message}</td></tr>`;
+  }
+}
+
+// refrescar automáticamente después de crear reserva
+document.addEventListener("DOMContentLoaded", () => {
+  cargarReservas();
+  const form = document.getElementById("reserva-form");
+  if (form) {
+    form.addEventListener("submit", () => {
+      setTimeout(cargarReservas, 1000);
+    });
+  }
+});

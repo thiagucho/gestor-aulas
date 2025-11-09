@@ -99,3 +99,31 @@ def create_reserva():
         "fin": reserva.fin.isoformat(),
         "estado": reserva.estado
     }), 201
+    
+@bp.route("/reservas", methods=["GET"])
+def listar_reservas():
+    """Devuelve todas las reservas con sus datos."""
+    reservas = Reserva.query.order_by(Reserva.inicio.asc()).all()
+    resultado = []
+    for r in reservas:
+        resultado.append({
+            "id": r.id,
+            "aula": r.aula.nombre if r.aula else None,
+            "usuario": r.usuario.nombre if r.usuario else None,
+            "inicio": r.inicio.strftime("%Y-%m-%d %H:%M"),
+            "fin": r.fin.strftime("%Y-%m-%d %H:%M"),
+            "estado": r.estado,
+        })
+    return jsonify(resultado)
+
+@bp.route("/reservas/<int:id>", methods=["PATCH"])
+def actualizar_reserva(id):
+    data = request.get_json(silent=True) or {}
+    nueva = data.get("estado")
+    r = Reserva.query.get_or_404(id)
+    if nueva not in ("pendiente", "confirmada", "cancelada"):
+        return jsonify({"error": "estado inválido"}), 400
+    r.estado = nueva
+    db.session.commit()
+    return jsonify({"ok": True, "estado": r.estado})
+
