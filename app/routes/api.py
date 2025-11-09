@@ -71,7 +71,7 @@ def create_reserva():
     ).first()
     # No permitir reservas entre medianoche y 6 AM
     if inicio.hour < 6 or fin.hour < 6:
-    return jsonify({"error": "No se permiten reservas entre las 00:00 y las 06:00"}), 400
+        return jsonify({"error": "No se permiten reservas entre las 00:00 y las 06:00"}), 400
 
     if conflict:
         return (
